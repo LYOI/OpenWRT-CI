@@ -1,0 +1,11 @@
+# 太乙 Plus ER2（JDCloud RE-CS-08）专用构建配置
+# 平台：qualcommbe / ipq53xx（IPQ5332，四核 A53，WiFi7）
+
+# 设备平台
+CONFIG_TARGET_qualcommbe=y
+CONFIG_TARGET_qualcommbe_ipq53xx=y
+CONFIG_TARGET_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=y
+
+# 仅本设备参与构建，避免拉入同平台其他机型的依赖
+CONFIG_TARGET_MULTI_PROFILE=y
+CONFIG_TARGET_PER_DEVICE_ROOTFS=y
