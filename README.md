@@ -1,69 +1,34 @@
-# 高质量<免费>交流群
+# OpenWRT-CI（太乙 Plus ER2 专用）
 
-[IPQ技术讨论群](https://qm.qq.com/q/v7nMhzB4oU)
+太乙 Plus ER2 / JDCloud RE-CS-08 的云编译仓库。
 
-# 高质量<付费>中转站
+- 硬件：IPQ5332（四核 A53，WiFi7），平台 `qualcommbe` / `ipq53xx`
+- 源码：[LYOI/immortalwrt-sfp](https://github.com/LYOI/immortalwrt-sfp) 分支 `owrt`
+- 配置：`Config/IPQ53XX-ER2.txt`
+- 工作流：`.github/workflows/ER2-BUILD.yml`（手动触发，可只输出配置不编译固件）
 
-[LiBwrt-Ai](https://api.zipimg.cn/register?aff=FFPS3UMJ8HJD)
+# 编译
 
-# 本地编译器
+在 Actions 中选择 `ER2-BUILD` 执行 `Run workflow`：
 
-https://github.com/VIKINGYFY/OWRT-Tools.git
+- `PACKAGE`：临时追加插件包，多个用换行分隔
+- `TEST`：勾选后只输出 `.config`，不编译固件
 
-# 自用修改版插件
+产物为 `factory.bin` 与 `sysupgrade.bin`，刷机用 `factory.bin`。
 
-https://github.com/VIKINGYFY/packages.git
+# 目录说明
 
-# OpenWRT-CI
-
-官方版：
-
-https://github.com/immortalwrt/immortalwrt.git
-
-自用版：
-
-https://github.com/VIKINGYFY/immortalwrt.git
+- `workflows`——自定义 CI 配置
+- `Scripts`——自定义脚本
+- `Config`——自定义配置（`GENERAL.txt` 为通用项，`IPQ53XX-ER2.txt` 为设备项）
 
 # U-BOOT
 
-高通版-沉心：
+高通版（沉心，推荐）：
 
 https://github.com/chenxin527/uboot-qsdk12.5-build.git
 
-高通版-小猪：
+# 上游
 
-https://github.com/1980490718/u-boot-2016.git
-
-联发科-全新版：
-
-https://github.com/VIKINGYFY/UBOOT-CI/releases
-
-联发科-官方版：
-
-https://drive.wrt.moe/uboot/mediatek
-
-# 固件简要说明
-
-固件每天早上5点自动编译。
-
-固件信息里的时间为编译开始的时间，方便核对上游源码提交时间。
-
-MEDIATEK系列、QUALCOMMAX系列、ROCKCHIP系列、X86系列。
-
-# 目录简要说明
-
-workflows——自定义CI配置
-
-Scripts——自定义脚本
-
-Config——自定义配置
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=vikingyfy%2Fopenwrt-ci&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=vikingyfy/openwrt-ci&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=vikingyfy/openwrt-ci&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=vikingyfy/openwrt-ci&type=date&legend=top-left" />
- </picture>
-</a>
+配方与脚本源自 [VIKINGYFY/OpenWRT-CI](https://github.com/VIKINGYFY/OpenWRT-CI)，
+源码源自 [VIKINGYFY/immortalwrt](https://github.com/VIKINGYFY/immortalwrt)。
