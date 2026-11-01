@@ -21,7 +21,8 @@ Actions → `ER2-BUILD` → `Run workflow`：
 qualcommbe-ipq53xx-jdcloud_re-cs-08-squashfs-<类型>[-sfp-2.5]-Qin-owrt-<YYYYMMDD-HHMM>.bin
 ```
 
-- `sfp-2.5`：光口 2.5G 版本（2500BASE-X 强制模式），10G 模块不可用
+- `sfp-2.5`：历史遗留标识。这个后缀最早用来区分“光口只跑 2.5G”的版本，
+  现在光口 10G / 2.5G 模块都能用，后缀不再代表速率上限
 - `Qin`：构建标识
 - `20261101-0450`：编译时刻（年月日-时分）
 
@@ -45,26 +46,37 @@ Module state: error
 
 **二、修复方式**
 
-- 内核补丁 `0403-*`：PCS 不支持带内自协商时降级为强制模式，不再拒绝模块（**这条是通不通的关键**）
+- 内核补丁 `0403-*`：PCS 不支持带内自协商时降级为强制模式，不再拒绝模块（**2.5G 模块通不通的关键**）
 - 内核补丁 `0404-*`：模块读不到 A2h 软状态字节时停止轮询（已验证，日志从刷屏降到 1 条）
-- DTS：`phy-mode` 由 `10gbase-r` 改为 `2500base-x`，对齐 PCS 实际能力（非关键，插模块后 phylink 会重新选）
+- 内核补丁 `0405-*`：10GBASE-R 补上 PCS `MISC2` 的 SerDes 模式位（**10G 模块通不通的关键**）
+- DTS：`phy-mode` 由 `10gbase-r` 改为 `2500base-x`，插模块后由 phylink 重新选择
 
 补丁打在源码仓库 [LYOI/immortalwrt-sfp](https://github.com/LYOI/immortalwrt-sfp) 里，不在本仓库。
 
 **三、已知遗留问题**
 
-1. 光口与 LAN 之间的流量走 SoC 软件桥接，不享受 QCA8386 硬件转发，跑满 2.5G 时 CPU 占用会上去。
+1. 光口与 LAN 之间的流量走 SoC 软件桥接，不享受 QCA8386 硬件转发，跑满时 CPU 占用会上去。
 2. 插拔模块后偶发需要重启网口才会重新协商。
-3. `phy-mode` 改动仅影响未插模块时的默认值，实际速率由模块 EEPROM 决定。
+3. 光口经 10G 交换机后，二层通（DHCP 能拿到租约、ARP 能解析）但三层单播不通；
+   同一终端直连 `lan3` 电口则 0 丢包。已排除 NAS 侧配置、ER2 flow offloading、
+   双网口同网段回包走错口、两台不同交换机与换端口换光纤位置，待用另一台 10G 设备做对照。
 
-**四、10G 模块不可用**
+**四、10G 模块**
 
-- 本板 PCS 只实现 SGMII / SGMII+（2500BASE-X）/ USXGMII，没有 10GBASE-R，而 SFP 模块只会让它选 1000BASE-X / 2500BASE-X / 10GBASE-R
-- OpenWrt 的 qca8k DSA 驱动 `mac_capabilities` 只到 `MAC_2500FD`
-- 原厂 / jiang 的固件能跑 10G，是因为它们把 SFP 当作 QCA8386 的第 2 号端口（`media-type = "sfp"`）由 QSDK 驱动管理，硬件转发，两套架构不同
-- 实测：插 10G AOC 时交换机侧 10G 口能 link up（说明光路与模块正常），但 ER2 侧 PCS 跑在 2.5G，无法同步，carrier 永远 0
+早期结论是“光口上限 2.5G”，那是误判。原因是驱动里 10GBASE-R 分支只写了 `PCS_MODE_XPCS`，
+从没写过 `MISC2`：数字侧切到 XPCS 按 10.3125G 跑，模拟侧还停在上一次的 SGMII（0x3，1.25G），
+两边速率对不上，link training 永远完不成，所以 carrier 恒为 0。
 
-结论：ImmortalWrt 下这个光口上限就是 2.5G。
+补丁 `0405-*` 把 10GBASE-R 折进 USXGMII 的 MISC2 赋值后：
+
+```
+PCS1 MISC2 0x30 → 0x70
+XPCS KR_STS 0x0000000c → 0x0000100d (link=1)
+sfp: Link is Up - 10Gbps/Full - flow control rx/tx
+```
+
+USXGMII 本身就是多速率 SerDes，同一个口 10G / 5G / 2.5G / 1G 都能自适应，
+后续可以在 `pcs_config()` 里按 link speed 选 `SEL` 与 `MISC2`，做到插什么模块跑什么速率。
 
 **五、端口归属**
 
