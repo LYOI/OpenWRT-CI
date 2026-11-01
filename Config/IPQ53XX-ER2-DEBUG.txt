@@ -1,0 +1,24 @@
+# 太乙 Plus ER2（JDCloud RE-CS-08）调试镜像配置
+# 在正式配置基础上多装一个 er2-debuglog：netconsole + pstore 归档。
+
+CONFIG_TARGET_qualcommbe=y
+CONFIG_TARGET_qualcommbe_ipq53xx=y
+
+CONFIG_TARGET_MULTI_PROFILE=y
+CONFIG_TARGET_PER_DEVICE_ROOTFS=y
+CONFIG_TARGET_DEVICE_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=y
+CONFIG_TARGET_DEVICE_PACKAGES_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=""
+
+# 调试日志组件（正式镜像不选）
+CONFIG_PACKAGE_er2-debuglog=y
+
+# 关闭 WiFi
+# CONFIG_PACKAGE_kmod-ath12k is not set
+# CONFIG_PACKAGE_ath12k-firmware-ipq5332-ddwrt is not set
+# CONFIG_PACKAGE_ath12k-firmware-qcn9274-ddwrt is not set
+# CONFIG_PACKAGE_wpad-openssl is not set
+# CONFIG_PACKAGE_wpad-basic-mbedtls is not set
+# CONFIG_PACKAGE_hostapd-common is not set
+# CONFIG_PACKAGE_iw is not set
+# CONFIG_PACKAGE_iwinfo is not set
+# CONFIG_PACKAGE_wireless-regdb is not set
