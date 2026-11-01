@@ -18,7 +18,7 @@ Actions → `ER2-BUILD` → `Run workflow`：
 ## 产物命名
 
 ```
-qualcommbe-ipq53xx-jdcloud_re-cs-08-squashfs-<类型>-sfp-2.5-Qin-owrt-<YYYYMMDD-HHMM>.bin
+qualcommbe-ipq53xx-jdcloud_re-cs-08-squashfs-<类型>[-sfp-2.5]-Qin-owrt-<YYYYMMDD-HHMM>.bin
 ```
 
 - `sfp-2.5`：光口 2.5G 版本（2500BASE-X 强制模式），10G 模块不可用
@@ -45,30 +45,37 @@ Module state: error
 
 **二、修复方式**
 
-- 内核补丁 `0403-*`：PCS 不支持带内自协商时降级为强制模式，不再拒绝模块
-- 内核补丁 `0404-*`：模块读不到 A2h 软状态字节时停止轮询
-- DTS：`phy-mode` 由 `10gbase-r` 改为 `2500base-x`，对齐 PCS 实际能力
+- 内核补丁 `0403-*`：PCS 不支持带内自协商时降级为强制模式，不再拒绝模块（**这条是通不通的关键**）
+- 内核补丁 `0404-*`：模块读不到 A2h 软状态字节时停止轮询（已验证，日志从刷屏降到 1 条）
+- DTS：`phy-mode` 由 `10gbase-r` 改为 `2500base-x`，对齐 PCS 实际能力（非关键，插模块后 phylink 会重新选）
 
-这两个补丁打在源码仓库 [LYOI/immortalwrt-sfp](https://github.com/LYOI/immortalwrt-sfp) 里，不在本仓库。
+补丁打在源码仓库 [LYOI/immortalwrt-sfp](https://github.com/LYOI/immortalwrt-sfp) 里，不在本仓库。
 
 **三、已知遗留问题**
 
-1. 部分模块（如诺基亚 3FE46541AA 猫棒）不实现 A2h 页软状态字节，未含 0404 补丁的固件会每秒刷约 20 条
-   `failed to read SFP soft status: -ENXIO`，不影响链路，只是日志脏。
+1. 光口与 LAN 之间的流量走 SoC 软件桥接，不享受 QCA8386 硬件转发，跑满 2.5G 时 CPU 占用会上去。
 2. 插拔模块后偶发需要重启网口才会重新协商。
-3. 光口与 LAN 之间的流量走 SoC 软件桥接，不享受 QCA8386 硬件转发，跑满 2.5G 时 CPU 占用会上去。
+3. `phy-mode` 改动仅影响未插模块时的默认值，实际速率由模块 EEPROM 决定。
 
 **四、10G 模块不可用**
 
 - 本板 PCS 只实现 SGMII / SGMII+（2500BASE-X）/ USXGMII，没有 10GBASE-R，而 SFP 模块只会让它选 1000BASE-X / 2500BASE-X / 10GBASE-R
-- OpenWrt 的 qca8k DSA 驱动 `mac_capabilities` 只到 `MAC_2500FD`，也无法把 SFP 交给交换芯片跑 10G
-- 原厂能跑 10G 是因为 QSDK 把 SFP 当作 QCA8386 的第 2 号端口（`media-type = "sfp"`）硬件转发，两套架构不同
+- OpenWrt 的 qca8k DSA 驱动 `mac_capabilities` 只到 `MAC_2500FD`
+- 原厂 / jiang 的固件能跑 10G，是因为它们把 SFP 当作 QCA8386 的第 2 号端口（`media-type = "sfp"`）由 QSDK 驱动管理，硬件转发，两套架构不同
+- 实测：插 10G AOC 时交换机侧 10G 口能 link up（说明光路与模块正常），但 ER2 侧 PCS 跑在 2.5G，无法同步，carrier 永远 0
 
 结论：ImmortalWrt 下这个光口上限就是 2.5G。
 
 **五、端口归属**
 
-`sfp` 归 WAN，`lan1 / lan2 / lan3` 和原来的 `wan` 电口全部归 LAN。
+调试期：`sfp` 与 `lan1 / lan2 / lan3` 一起归 LAN，`wan` 电口仍作 WAN。
+这样可以直接把终端插到光口上访问设备，方便验证。
+
+需要把光口当 WAN 时，把 `02_network` 里那一行换成：
+
+```sh
+ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 wan" "sfp"
+```
 
 完整调试过程见：[docs/ER2-SFP-notes.md](https://github.com/LYOI/immortalwrt-sfp/blob/owrt/docs/ER2-SFP-notes.md)
 
