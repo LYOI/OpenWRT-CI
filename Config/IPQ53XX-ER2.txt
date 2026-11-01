@@ -4,4 +4,13 @@
 # 设备平台
 CONFIG_TARGET_qualcommbe=y
 CONFIG_TARGET_qualcommbe_ipq53xx=y
-CONFIG_TARGET_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=y
+
+# 多机型模式：设备选择符号必须写成
+#   CONFIG_TARGET_DEVICE_<target>_<subtarget>_DEVICE_<device>
+# 写成 CONFIG_TARGET_<target>_<subtarget>_DEVICE_<device> 时 defconfig 会把这个
+# 符号裁掉，结果就是“不选任何设备”：包编了一大堆，最后生成 profiles.json
+# 时报 “JSON info file script could not find any JSON files for target” 而失败。
+CONFIG_TARGET_MULTI_PROFILE=y
+CONFIG_TARGET_PER_DEVICE_ROOTFS=y
+CONFIG_TARGET_DEVICE_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=y
+CONFIG_TARGET_DEVICE_PACKAGES_qualcommbe_ipq53xx_DEVICE_jdcloud_re-cs-08=""
